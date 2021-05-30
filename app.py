@@ -1,5 +1,5 @@
 from flask import Flask, request, Blueprint
-from pymongo import MongoClient
+import pymongo 
 import jwt
 
 app = Flask(__name__)
@@ -9,8 +9,13 @@ books_blueprint: Blueprint = Blueprint("books", __name__)
 
 @books_blueprint.route('/save', methods=['POST'])
 def save_book():
+    try:
+        encoded_jwt = request.headers.get('Authorization')
+        decoded = jwt.decode(encoded_jwt, key, algorithms="HS256")
+    except:
+        return dict(message='Unauthorized to call this api. Either missing or error in JWT token sent.')
     data = request.json.copy()
-    client = MongoClient('localhost', 27017)
+    client = pymongo.MongoClient("mongodb+srv://dbUser:dbUserPassword@cst-anchalpreet-flask.wfjxc.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
     db = client['anchalpreet']
     books = db['books']
     if not {'id', 'author', 'country', 'pages', 'title', 'year'}.issubset(set(data.keys())):
@@ -31,7 +36,12 @@ def save_book():
 
 @books_blueprint.route('/list', methods=['GET'])
 def list_books():
-    client = MongoClient('localhost', 27017)
+    try:
+        encoded_jwt = request.headers.get('Authorization')
+        decoded = jwt.decode(encoded_jwt, key, algorithms="HS256")
+    except:
+        return dict(message='Unauthorized to call this api. Either missing or error in JWT token sent.')
+    client = pymongo.MongoClient("mongodb+srv://dbUser:dbUserPassword@cst-anchalpreet-flask.wfjxc.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
     db = client['anchalpreet']
     books = db['books']
     pipeline = [
@@ -49,9 +59,14 @@ def list_books():
 
 @books_blueprint.route('/delete', methods=['DELETE'])
 def delete_book():
+    try:
+        encoded_jwt = request.headers.get('Authorization')
+        decoded = jwt.decode(encoded_jwt, key, algorithms="HS256")
+    except:
+        return dict(message='Unauthorized to call this api. Either missing or error in JWT token sent.')
     from bson import ObjectId
     _id = request.args.get("_id")
-    client = MongoClient('localhost', 27017)
+    client = pymongo.MongoClient("mongodb+srv://dbUser:dbUserPassword@cst-anchalpreet-flask.wfjxc.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
     db = client['anchalpreet']
     books = db['books']
     if not books.find_one(filter={'_id': ObjectId(_id)}):
@@ -62,13 +77,18 @@ def delete_book():
 
 @books_blueprint.route('/update', methods=['PUT'])
 def update_book():
+    try:
+        encoded_jwt = request.headers.get('Authorization')
+        decoded = jwt.decode(encoded_jwt, key, algorithms="HS256")
+    except:
+        return dict(message='Unauthorized to call this api. Either missing or error in JWT token sent.')
     data = request.json.copy()
     if not {'_id'}.issubset(set(data.keys())):
 	    return dict(message='Mandatory Fields Missing.')
     _id = data.pop('_id')
     from bson import ObjectId
     _id = request.args.get("_id")
-    client = MongoClient('localhost', 27017)
+    client = pymongo.MongoClient("mongodb+srv://dbUser:dbUserPassword@cst-anchalpreet-flask.wfjxc.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
     db = client['anchalpreet']
     books = db['books']
     book = books.find_one(filter={'_id': ObjectId(_id)})
@@ -95,7 +115,7 @@ def register():
     data.pop('password1')
     data['password'] = data.pop('password2')
     print(data)
-    client = MongoClient('localhost', 27017)
+    client = pymongo.MongoClient("mongodb+srv://dbUser:dbUserPassword@cst-anchalpreet-flask.wfjxc.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
     db = client['anchalpreet']
     users = db['users']
     if users.find_one({"username": data['username']}):
@@ -118,11 +138,11 @@ def login():
     username = data['username']
     password = data['password']
     
-    client = MongoClient('localhost', 27017)
+    client = pymongo.MongoClient("mongodb+srv://dbUser:dbUserPassword@cst-anchalpreet-flask.wfjxc.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
     db = client['anchalpreet']
     users = db['users']
     user = users.find_one({"username": data['username']})
-    if user['password'] == password:
+    if user and user['password'] == password:
         return dict(message='Logged in SuccessFully.')    
     else:
         return dict(message='Incorrect username or password')    
